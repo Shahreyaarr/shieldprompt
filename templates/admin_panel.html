@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldPrompt — Super Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f4f5f7;--white:#fff;--text:#0d0d0c;--muted:#6b6b68;--light:#a0a09c;
+  --border:#e5e5e1;--accent:#1a56db;--accent-light:#eff4ff;--accent-hover:#1447c0;
+  --danger:#dc2626;--danger-light:#fef2f2;--success:#16a34a;--success-light:#f0fdf4;
+  --gold:#d97706;--gold-light:#fffbeb;--sidebar:220px;
+  --font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
+  --shadow:0 1px 4px rgba(0,0,0,0.07);--shadow-md:0 4px 16px rgba(0,0,0,0.08);
+}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── LOGIN OVERLAY ───────────────────────────── */
+#loginOverlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;}
+.login-card{background:white;border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:400px;box-shadow:var(--shadow-md);animation:fadeUp 0.4s ease;}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;justify-content:center;}
+.login-logo-icon{width:36px;height:36px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.login-logo-icon svg{width:18px;height:18px;fill:white;}
+.login-logo-text{font-size:18px;font-weight:700;}
+.login-title{font-size:22px;font-weight:700;text-align:center;margin-bottom:6px;}
+.login-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:28px;}
+.login-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:var(--font-b);outline:none;transition:all 0.15s;margin-bottom:14px;background:var(--bg);}
+.login-input:focus{border-color:var(--accent);background:white;}
+.login-btn{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:all 0.2s;}
+.login-btn:hover{background:var(--accent-hover);}
+.login-error{font-size:13px;color:var(--danger);text-align:center;margin-top:12px;display:none;}
+.admin-badge{display:inline-flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--danger);letter-spacing:0.5px;margin-bottom:20px;}
+.admin-badge-wrap{text-align:center;}
+
+/* ── APP SHELL ───────────────────────────────── */
+#appShell{display:none;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:white;border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;}
+.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sb-logo-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.sb-logo-icon svg{width:15px;height:15px;fill:white;}
+.sb-logo-text{font-size:15px;font-weight:700;}
+.sb-logo-badge{font-size:9px;font-weight:700;background:var(--danger);color:white;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;}
+.sb-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+.sb-section{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--light);padding:0 8px;margin:16px 0 8px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:all 0.15s;font-size:13.5px;font-weight:500;color:var(--muted);margin-bottom:2px;text-decoration:none;}
+.sb-item:hover{background:var(--bg);color:var(--text);}
+.sb-item.active{background:var(--accent-light);color:var(--accent);}
+.sb-item svg{width:16px;height:16px;flex-shrink:0;}
+.sb-badge{margin-left:auto;background:var(--danger);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.sb-bottom{padding:16px;border-top:1px solid var(--border);}
+.sb-user{display:flex;align-items:center;gap:10px;}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.sb-user-info{flex:1;}
+.sb-user-name{font-size:13px;font-weight:600;}
+.sb-user-role{font-size:11px;color:var(--muted);}
+.sb-logout{padding:6px;background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--muted);transition:all 0.15s;}
+.sb-logout:hover{background:var(--danger-light);color:var(--danger);border-color:#fecaca;}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;}
+.topbar{background:white;border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+.topbar-title{font-size:16px;font-weight:700;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.status-pill{display:flex;align-items:center;gap:6px;background:var(--success-light);border:1px solid #bbf7d0;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--success);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;}
+.content{padding:32px;flex:1;}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:white;border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);}
+.stat-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+.stat-value{font-family:var(--font-m);font-size:28px;font-weight:500;color:var(--text);letter-spacing:-1px;line-height:1;}
+.stat-change{font-size:12px;margin-top:6px;display:flex;align-items:center;gap:4px;}
+.up{color:var(--success);}
+.down{color:var(--danger);}
+.stat-icon{float:right;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+
+/* TABLES */
+.table-card{background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:24px;}
+.table-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.table-title{font-size:15px;font-weight:700;}
+.table-actions{display:flex;gap:8px;align-items:center;}
+.search-input{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-b);outline:none;width:200px;transition:border-color 0.15s;}
+.search-input:focus{border-color:var(--accent);}
+.filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-b);outline:none;background:white;cursor:pointer;}
+table{width:100%;border-collapse:collapse;}
+th{padding:11px 20px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);}
+td{padding:13px 20px;font-size:13.5px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fafafa;}
+.td-name{font-weight:600;}
+.td-email{color:var(--muted);}
+.td-mono{font-family:var(--font-m);font-size:12.5px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.3px;}
+.badge-pro{background:var(--accent-light);color:var(--accent);}
+.badge-free{background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.badge-ent{background:#fdf4ff;color:#9333ea;}
+.badge-active{background:var(--success-light);color:var(--success);}
+.badge-banned{background:var(--danger-light);color:var(--danger);}
+.badge-paid{background:var(--success-light);color:var(--success);}
+.badge-pending{background:var(--gold-light);color:var(--gold);}
+.badge-failed{background:var(--danger-light);color:var(--danger);}
+
+/* ACTION BTNS */
+.btn-sm{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-b);border:1px solid var(--border);background:white;transition:all 0.15s;}
+.btn-sm:hover{background:var(--bg);}
+.btn-sm.danger{color:var(--danger);border-color:#fecaca;background:var(--danger-light);}
+.btn-sm.danger:hover{background:#fee2e2;}
+.btn-sm.success{color:var(--success);border-color:#bbf7d0;background:var(--success-light);}
+.btn-sm.primary{color:white;background:var(--accent);border-color:var(--accent);}
+.btn-sm.primary:hover{background:var(--accent-hover);}
+.action-btns{display:flex;gap:6px;}
+
+/* PAGINATION */
+.pagination{padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);}
+.page-info{font-size:13px;color:var(--muted);}
+.page-btns{display:flex;gap:6px;}
+.page-btn{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--font-b);background:white;transition:all 0.15s;}
+.page-btn:hover{background:var(--bg);}
+.page-btn.active{background:var(--accent);color:white;border-color:var(--accent);}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{background:white;border:1px solid var(--border);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow);}
+.chart-title{font-size:15px;font-weight:700;margin-bottom:20px;}
+.bar-chart{display:flex;gap:8px;align-items:flex-end;height:120px;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.bar{width:100%;border-radius:6px 6px 0 0;background:var(--accent);opacity:0.8;transition:all 0.3s;cursor:pointer;}
+.bar:hover{opacity:1;}
+.bar-label{font-size:10px;color:var(--muted);font-family:var(--font-m);}
+.donut-wrap{display:flex;flex-direction:column;gap:14px;}
+.donut-item{display:flex;align-items:center;gap:12px;}
+.donut-color{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.donut-label{font-size:13px;color:var(--muted);flex:1;}
+.donut-value{font-family:var(--font-m);font-size:14px;font-weight:500;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.3s ease;}
+.modal-header{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-size:17px;font-weight:700;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;}
+.modal-body{padding:24px 28px;}
+.modal-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg);font-size:13.5px;}
+.modal-row:last-child{border-bottom:none;}
+.modal-key{color:var(--muted);}
+.modal-val{font-weight:500;text-align:right;max-width:60%;}
+
+/* PAGES */
+.page{display:none;}
+.page.active{display:block;animation:fadeUp 0.3s ease;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:48px 24px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:12px;}
+.empty-text{font-size:14px;}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;gap:10px;color:var(--muted);}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+
+/* MOBILE */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform 0.3s;}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-grid{grid-template-columns:1fr;}
+  .topbar{padding:0 16px;}
+  .content{padding:20px 16px;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .stat-value{font-size:22px;}
+  table{font-size:12px;}
+  th,td{padding:10px 12px;}
+  .table-actions{flex-wrap:wrap;}
+  .search-input{width:140px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <div class="admin-badge-wrap">
+      <div class="admin-badge">⚡ SUPER ADMIN</div>
+    </div>
+    <div class="login-logo">
+      <div class="login-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L4 5v6c0 5.25 3.5 10.15 8 11.35C16.5 21.15 20 16.25 20 11V5l-8-3z"/></svg></div>
+      <div class="login-logo-text">ShieldPrompt</div>
+    </div>
+    <div class="login-title">Admin Login</div>
+    <div class="login-sub">Restricted access. Authorized personnel only.</div>
+    <input class="login-input" type="email" id="adminEmail" placeholder="admin@shieldprompt.in" value="admin@shieldprompt.in">
+    <input class="login-input" type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" onclick="adminLogin()">Access Admin Panel →</button>
+    <div class="login-error" id="loginError">Invalid credentials. Access denied.</div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L4 5v6c0 5.25 3.5 10.15 8 11.35C16.5 21.15 20 16.25 20 11V5l-8-3z"/></svg></div>
+      <div class="sb-logo-text">ShieldPrompt</div>
+      <div class="sb-logo-badge">ADMIN</div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section">Overview</div>
+      <a class="sb-item active" onclick="showPage('dashboard')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+
+      <div class="sb-section">Management</div>
+      <a class="sb-item" onclick="showPage('users')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+        <span class="sb-badge" id="sbUserCount">—</span>
+      </a>
+      <a class="sb-item" onclick="showPage('payments')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Payments
+      </a>
+      <a class="sb-item" onclick="showPage('apikeys')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        API Keys
+      </a>
+
+      <div class="sb-section">System</div>
+      <a class="sb-item" onclick="showPage('analytics')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+    </nav>
+
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="sb-avatar">A</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name">Super Admin</div>
+          <div class="sb-user-role">admin@shieldprompt.in</div>
+        </div>
+        <button class="sb-logout" onclick="adminLogout()" title="Logout">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="document.getElementById('sidebar').classList.toggle('open')" style="display:none;background:none;border:none;cursor:pointer;padding:4px;" id="menuBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-pill"><div class="status-dot"></div>System Operational</div>
+        <div style="font-size:13px;color:var(--muted);" id="currentTime"></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD PAGE ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><div class="stat-icon" style="background:#eff4ff;">👥</div><div class="stat-label">Total Users</div><div class="stat-value" id="statUsers">—</div><div class="stat-change up" id="statUsersNew"></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#f0fdf4;">💰</div><div class="stat-label">Revenue (Total)</div><div class="stat-value" id="statRevenue">—</div><div class="stat-change up" id="statRevMonth"></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#eff4ff;">🔑</div><div class="stat-label">Active API Keys</div><div class="stat-value" id="statKeys">—</div><div class="stat-change" id="statKeysRev"></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#fef2f2;">🛡️</div><div class="stat-label">Threats Blocked</div><div class="stat-value" id="statThreats">—</div><div class="stat-change" id="statReqToday"></div></div>
+        </div>
+
+        <!-- SUB STATS -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
+          <div class="stat-card" style="padding:16px 20px;">
+            <div class="stat-label">Pro Users</div>
+            <div style="font-family:var(--font-m);font-size:22px;font-weight:500;color:var(--accent);" id="statPro">—</div>
+          </div>
+          <div class="stat-card" style="padding:16px 20px;">
+            <div class="stat-label">Free Users</div>
+            <div style="font-family:var(--font-m);font-size:22px;font-weight:500;color:var(--muted);" id="statFree">—</div>
+          </div>
+          <div class="stat-card" style="padding:16px 20px;">
+            <div class="stat-label">API Requests Today</div>
+            <div style="font-family:var(--font-m);font-size:22px;font-weight:500;color:var(--success);" id="statToday">—</div>
+          </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-title">API Requests — Last 7 Days</div>
+            <div class="bar-chart" id="barChart"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">User Plans</div>
+            <div class="donut-wrap" id="planChart"></div>
+          </div>
+        </div>
+
+        <!-- RECENT PAYMENTS -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Recent Payments</div>
+            <button class="btn-sm primary" onclick="showPage('payments')">View All →</button>
+          </div>
+          <table><thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="recentPayments"><tr><td colspan="5"><div class="loading"><div class="spin"></div>Loading…</div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- ── USERS PAGE ── -->
+      <div class="page" id="page-users">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">All Users</div>
+            <div class="table-actions">
+              <input class="search-input" type="text" placeholder="Search users…" oninput="searchUsers(this.value)" id="userSearch">
+              <select class="filter-select" onchange="filterUsers(this.value)">
+                <option value="">All Plans</option>
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody id="usersTable"><tr><td colspan="6"><div class="loading"><div class="spin"></div>Loading users…</div></td></tr></tbody>
+          </table>
+          <div class="pagination" id="usersPagination"></div>
+        </div>
+      </div>
+
+      <!-- ── PAYMENTS PAGE ── -->
+      <div class="page" id="page-payments">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">All Payments</div>
+          </div>
+          <table>
+            <thead><tr><th>User</th><th>Order ID</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="paymentsTable"><tr><td colspan="6"><div class="loading"><div class="spin"></div>Loading…</div></td></tr></tbody>
+          </table>
+          <div class="pagination" id="paymentsPagination"></div>
+        </div>
+      </div>
+
+      <!-- ── API KEYS PAGE ── -->
+      <div class="page" id="page-apikeys">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">All API Keys</div>
+          </div>
+          <table>
+            <thead><tr><th>Key Prefix</th><th>Name</th><th>Email</th><th>Tier</th><th>Status</th><th>Created</th><th>Last Used</th><th>Action</th></tr></thead>
+            <tbody id="keysTable"><tr><td colspan="8"><div class="loading"><div class="spin"></div>Loading…</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── ANALYTICS PAGE ── -->
+      <div class="page" id="page-analytics">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-title">Monthly Revenue (₹)</div>
+            <div class="bar-chart" id="revenueChart"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Top Users by API Usage</div>
+            <div id="topUsersChart"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">User Details</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody">Loading…</div>
+  </div>
+</div>
+
+<script>
+const FLASK  = "http://127.0.0.1:5000";
+const ADMIN_TOKEN = "sp_admin_super_secret_2026";
+let adminToken = null;
+let currentPage = { users:1, payments:1 };
+let searchTimer = null;
+
+// ── TIME ──────────────────────────────────────
+function updateTime() {
+  document.getElementById('currentTime').textContent =
+    new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateTime, 1000); updateTime();
+
+// ── ADMIN LOGIN ───────────────────────────────
+async function adminLogin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass  = document.getElementById('adminPass').value;
+  document.getElementById('loginError').style.display = 'none';
+
+  try {
+    const res  = await fetch(`${FLASK}/api/admin/login`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password: pass})
+    });
+    const data = await res.json();
+    if (data.success) { activateAdmin(data.token); return; }
+    document.getElementById('loginError').style.display = 'block';
+  } catch(e) {
+    // Demo mode — hardcoded credentials
+    if (email === 'admin@shieldprompt.in' && pass === 'ShieldAdmin@2026') {
+      activateAdmin(ADMIN_TOKEN);
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+}
+
+function activateAdmin(token) {
+  adminToken = token;
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appShell').style.display    = 'block';
+  if (window.innerWidth <= 900) document.getElementById('menuBtn').style.display = 'block';
+  loadDashboard();
+}
+
+function adminLogout() {
+  adminToken = null;
+  document.getElementById('appShell').style.display   = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('adminPass').value = '';
+}
+
+// ── API HELPER ────────────────────────────────
+async function api(url) {
+  try {
+    const res = await fetch(`${FLASK}${url}`, {headers:{'X-Admin-Token': adminToken}});
+    return await res.json();
+  } catch(e) { return null; }
+}
+
+// ── PAGES ─────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i => {
+    if (i.getAttribute('onclick')?.includes(name)) i.classList.add('active');
+  });
+  document.getElementById('topbarTitle').textContent =
+    {dashboard:'Dashboard',users:'Users',payments:'Payments',apikeys:'API Keys',analytics:'Analytics'}[name];
+  if (name === 'users') loadUsers();
+  if (name === 'payments') loadPayments();
+  if (name === 'apikeys') loadKeys();
+  if (name === 'analytics') loadAnalytics();
+  if (window.innerWidth <= 900) document.getElementById('sidebar').classList.remove('open');
+}
+
+// ── DASHBOARD ─────────────────────────────────
+async function loadDashboard() {
+  const stats = await api('/api/admin/stats');
+  if (stats) {
+    document.getElementById('statUsers').textContent  = stats.users.total.toLocaleString('en-IN');
+    document.getElementById('statUsersNew').textContent = `+${stats.users.new_today} today`;
+    document.getElementById('statRevenue').textContent = `₹${stats.revenue.total.toLocaleString('en-IN')}`;
+    document.getElementById('statRevMonth').textContent = `₹${stats.revenue.monthly.toLocaleString('en-IN')} this month`;
+    document.getElementById('statKeys').textContent   = stats.api_keys.active.toLocaleString('en-IN');
+    document.getElementById('statKeysRev').textContent = `${stats.api_keys.revoked} revoked`;
+    document.getElementById('statThreats').textContent = stats.usage.threats_total.toLocaleString('en-IN');
+    document.getElementById('statReqToday').textContent = `${stats.usage.requests_today} requests today`;
+    document.getElementById('statPro').textContent  = stats.users.pro;
+    document.getElementById('statFree').textContent = stats.users.free;
+    document.getElementById('statToday').textContent = stats.usage.requests_today.toLocaleString('en-IN');
+    document.getElementById('sbUserCount').textContent = stats.users.total;
+
+    // Plan chart
+    document.getElementById('planChart').innerHTML = `
+      <div class="donut-item"><div class="donut-color" style="background:var(--muted)"></div><div class="donut-label">Free</div><div class="donut-value">${stats.users.free}</div></div>
+      <div class="donut-item"><div class="donut-color" style="background:var(--accent)"></div><div class="donut-label">Pro</div><div class="donut-value">${stats.users.pro}</div></div>
+      <div class="donut-item"><div class="donut-color" style="background:#9333ea"></div><div class="donut-label">Enterprise</div><div class="donut-value">${stats.users.enterprise}</div></div>
+    `;
+  } else {
+    // Demo data
+    document.getElementById('statUsers').textContent  = '142';
+    document.getElementById('statRevenue').textContent = '₹34,965';
+    document.getElementById('statKeys').textContent   = '98';
+    document.getElementById('statThreats').textContent = '12,847';
+    document.getElementById('statRevMonth').textContent = '₹8,991 this month';
+    document.getElementById('statUsersNew').textContent = '+3 today';
+    document.getElementById('statPro').textContent  = '35';
+    document.getElementById('statFree').textContent = '107';
+    document.getElementById('statToday').textContent = '2,431';
+    document.getElementById('sbUserCount').textContent = '142';
+    document.getElementById('planChart').innerHTML = `
+      <div class="donut-item"><div class="donut-color" style="background:var(--muted)"></div><div class="donut-label">Free</div><div class="donut-value">107</div></div>
+      <div class="donut-item"><div class="donut-color" style="background:var(--accent)"></div><div class="donut-label">Pro</div><div class="donut-value">35</div></div>
+      <div class="donut-item"><div class="donut-color" style="background:#9333ea"></div><div class="donut-label">Enterprise</div><div class="donut-value">0</div></div>
+    `;
+  }
+
+  const sys = await api('/api/admin/system');
+  const daily = sys?.daily_requests || [{date:'Mon',requests:320},{date:'Tue',requests:510},{date:'Wed',requests:430},{date:'Thu',requests:690},{date:'Fri',requests:820},{date:'Sat',requests:410},{date:'Sun',requests:240}];
+  const max   = Math.max(...daily.map(d => d.requests)) || 1;
+  document.getElementById('barChart').innerHTML = daily.map(d => {
+    const h = Math.max(8, (d.requests / max) * 100);
+    const lbl = d.date?.slice(5) || d.date;
+    return `<div class="bar-wrap"><div class="bar" style="height:${h}px;" title="${d.requests} requests"></div><div class="bar-label">${lbl}</div></div>`;
+  }).join('');
+
+  // Recent payments demo
+  const payments = await api('/api/admin/payments');
+  const list = payments?.payments || [
+    {user_name:'Raj Sharma', user_email:'raj@startup.in', plan:'pro', amount:99900, status:'paid', paid_at:'2026-03-06'},
+    {user_name:'Priya Singh', user_email:'priya@tech.co', plan:'pro', amount:99900, status:'paid', paid_at:'2026-03-05'},
+    {user_name:'Amit Kumar', user_email:'amit@corp.in', plan:'pro', amount:99900, status:'pending', paid_at:'—'},
+  ];
+  document.getElementById('recentPayments').innerHTML = list.slice(0,5).map(p => `
+    <tr>
+      <td><div class="td-name">${p.user_name||'—'}</div><div class="td-email">${p.user_email}</div></td>
+      <td><span class="badge badge-pro">${p.plan}</span></td>
+      <td class="td-mono">₹${(p.amount/100).toFixed(0)}</td>
+      <td><span class="badge badge-${p.status}">${p.status}</span></td>
+      <td style="color:var(--muted);font-size:12.5px;">${(p.paid_at||p.created_at||'').slice(0,10)}</td>
+    </tr>`).join('');
+}
+
+// ── USERS ─────────────────────────────────────
+let userSearch = '', userPlan = '';
+async function loadUsers(page=1) {
+  currentPage.users = page;
+  const data = await api(`/api/admin/users?page=${page}&search=${encodeURIComponent(userSearch)}&plan=${userPlan}`);
+  const users = data?.users || getDemoUsers();
+  const total = data?.total || users.length;
+
+  document.getElementById('usersTable').innerHTML = users.map(u => `
+    <tr>
+      <td class="td-name">${u.name||'—'}</td>
+      <td class="td-email">${u.email}</td>
+      <td><span class="badge badge-${u.plan}">${u.plan}</span></td>
+      <td><span class="badge badge-${u.is_active?'active':'banned'}">${u.is_active?'Active':'Banned'}</span></td>
+      <td style="color:var(--muted);font-size:12.5px;">${(u.created_at||'').slice(0,10)}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-sm" onclick="viewUser(${u.id})">View</button>
+          <button class="btn-sm" onclick="changePlan(${u.id},'${u.email}','${u.plan}')">Plan</button>
+          <button class="btn-sm ${u.is_active?'danger':'success'}" onclick="toggleUser(${u.id},${u.is_active})">
+            ${u.is_active?'Ban':'Unban'}
+          </button>
+        </div>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="6"><div class="empty"><div class="empty-icon">👥</div><div class="empty-text">No users found</div></div></td></tr>`;
+
+  renderPagination('usersPagination', page, Math.ceil(total/20), total, loadUsers);
+}
+
+function getDemoUsers() {
+  return [
+    {id:1,name:'Raj Sharma',email:'raj@startup.in',plan:'pro',is_active:1,created_at:'2026-01-15'},
+    {id:2,name:'Priya Singh',email:'priya@tech.co',plan:'free',is_active:1,created_at:'2026-02-03'},
+    {id:3,name:'Amit Kumar',email:'amit@corp.in',plan:'pro',is_active:1,created_at:'2026-02-20'},
+    {id:4,name:'Neha Gupta',email:'neha@ai.in',plan:'free',is_active:0,created_at:'2026-03-01'},
+    {id:5,name:'Vikram Malhotra',email:'vikram@dev.io',plan:'enterprise',is_active:1,created_at:'2026-01-05'},
+  ];
+}
+
+function searchUsers(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { userSearch = val; loadUsers(1); }, 400);
+}
+
+function filterUsers(val) { userPlan = val; loadUsers(1); }
+
+async function viewUser(uid) {
+  document.getElementById('userModal').classList.add('open');
+  const data = await api(`/api/admin/users/${uid}`);
+  const u    = data?.user || {name:'Raj Sharma',email:'raj@startup.in',plan:'pro',company:'Startup Inc',created_at:'2026-01-15',is_active:1};
+  const keys = data?.api_keys || [{key_prefix:'sp_live_abc...',tier:'pro',is_active:1,created_at:'2026-01-15'}];
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-row"><span class="modal-key">Name</span><span class="modal-val">${u.name||'—'}</span></div>
+    <div class="modal-row"><span class="modal-key">Email</span><span class="modal-val">${u.email}</span></div>
+    <div class="modal-row"><span class="modal-key">Company</span><span class="modal-val">${u.company||'—'}</span></div>
+    <div class="modal-row"><span class="modal-key">Plan</span><span class="modal-val"><span class="badge badge-${u.plan}">${u.plan}</span></span></div>
+    <div class="modal-row"><span class="modal-key">Status</span><span class="modal-val"><span class="badge badge-${u.is_active?'active':'banned'}">${u.is_active?'Active':'Banned'}</span></span></div>
+    <div class="modal-row"><span class="modal-key">Joined</span><span class="modal-val">${(u.created_at||'').slice(0,10)}</span></div>
+    <div class="modal-row"><span class="modal-key">Usage Today</span><span class="modal-val">${data?.usage_today||0} requests</span></div>
+    <div style="margin-top:16px;font-size:13px;font-weight:700;margin-bottom:8px;">API Keys (${keys.length})</div>
+    ${keys.map(k=>`<div style="background:var(--bg);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12.5px;font-family:var(--font-m);">${k.key_prefix} — <span class="badge badge-${k.tier}">${k.tier}</span> — <span class="${k.is_active?'':'td-email'}">${k.is_active?'Active':'Revoked'}</span></div>`).join('')}
+  `;
+}
+
+function closeModal() { document.getElementById('userModal').classList.remove('open'); }
+
+async function changePlan(uid, email, currentPlan) {
+  const plans   = ['free','pro','enterprise'];
+  const newPlan = prompt(`Change plan for ${email}\nCurrent: ${currentPlan}\nEnter new plan (free/pro/enterprise):`);
+  if (!newPlan || !plans.includes(newPlan)) return;
+  const res = await fetch(`${FLASK}/api/admin/users/${uid}/plan`, {
+    method:'PUT', headers:{'Content-Type':'application/json','X-Admin-Token':adminToken},
+    body: JSON.stringify({plan: newPlan})
+  });
+  const data = await res.json().catch(() => ({success:true}));
+  if (data.success || data.message) { alert(`✓ Plan updated to ${newPlan}`); loadUsers(currentPage.users); }
+  else alert('Error: ' + (data.error||'Failed'));
+}
+
+async function toggleUser(uid, isActive) {
+  const action = isActive ? 'ban' : 'unban';
+  if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+  await fetch(`${FLASK}/api/admin/users/${uid}/status`, {
+    method:'PUT', headers:{'Content-Type':'application/json','X-Admin-Token':adminToken},
+    body: JSON.stringify({active: !isActive})
+  }).catch(() => null);
+  loadUsers(currentPage.users);
+}
+
+// ── PAYMENTS ──────────────────────────────────
+async function loadPayments(page=1) {
+  const data = await api(`/api/admin/payments?page=${page}`);
+  const list = data?.payments || [
+    {user_name:'Raj Sharma',user_email:'raj@startup.in',razorpay_order_id:'order_abc123',plan:'pro',amount:99900,status:'paid',paid_at:'2026-03-06'},
+    {user_name:'Vikram Malhotra',user_email:'vikram@dev.io',razorpay_order_id:'order_xyz456',plan:'pro',amount:99900,status:'paid',paid_at:'2026-02-15'},
+  ];
+  const total = data?.total || list.length;
+  document.getElementById('paymentsTable').innerHTML = list.map(p => `
+    <tr>
+      <td><div class="td-name">${p.user_name||'—'}</div><div class="td-email">${p.user_email}</div></td>
+      <td class="td-mono" style="font-size:11px;">${(p.razorpay_order_id||'').slice(0,18)}…</td>
+      <td><span class="badge badge-pro">${p.plan}</span></td>
+      <td class="td-mono">₹${(p.amount/100).toFixed(0)}</td>
+      <td><span class="badge badge-${p.status}">${p.status}</span></td>
+      <td style="color:var(--muted);font-size:12.5px;">${(p.paid_at||p.created_at||'').slice(0,10)}</td>
+    </tr>`).join('');
+  renderPagination('paymentsPagination', page, Math.ceil(total/20), total, loadPayments);
+}
+
+// ── API KEYS ──────────────────────────────────
+async function loadKeys() {
+  const data = await api('/api/admin/keys');
+  const keys = data || [
+    {key_prefix:'sp_live_abc...',name:'Raj Sharma',email:'raj@startup.in',tier:'pro',is_active:true,created_at:'2026-01-15',last_used:'2026-03-06'},
+    {key_prefix:'sp_live_def...',name:'Priya Singh',email:'priya@tech.co',tier:'free',is_active:true,created_at:'2026-02-03',last_used:'2026-03-05'},
+  ];
+  document.getElementById('keysTable').innerHTML = keys.map(k => `
+    <tr>
+      <td class="td-mono">${k.key_prefix}</td>
+      <td class="td-name">${k.name}</td>
+      <td class="td-email">${k.email}</td>
+      <td><span class="badge badge-${k.tier}">${k.tier}</span></td>
+      <td><span class="badge badge-${k.is_active?'active':'banned'}">${k.is_active?'Active':'Revoked'}</span></td>
+      <td style="color:var(--muted);font-size:12px;">${(k.created_at||'').slice(0,10)}</td>
+      <td style="color:var(--muted);font-size:12px;">${(k.last_used||'Never').slice(0,10)}</td>
+      <td>${k.is_active?`<button class="btn-sm danger" onclick="revokeKey('${k.key_prefix}')">Revoke</button>`:'<span style="color:var(--muted);font-size:12px;">Revoked</span>'}</td>
+    </tr>`).join('');
+}
+
+async function revokeKey(prefix) {
+  if (!confirm(`Revoke API key ${prefix}?`)) return;
+  await fetch(`${FLASK}/api/admin/keys/${encodeURIComponent(prefix)}/revoke`, {
+    method:'POST', headers:{'X-Admin-Token':adminToken}
+  }).catch(()=>null);
+  loadKeys();
+}
+
+// ── ANALYTICS ─────────────────────────────────
+async function loadAnalytics() {
+  const data  = await api('/api/admin/system');
+  const rev   = data?.monthly_revenue || [{month:'Oct',revenue:0},{month:'Nov',revenue:0},{month:'Dec',revenue:1998},{month:'Jan',revenue:4995},{month:'Feb',revenue:7992},{month:'Mar',revenue:8991}];
+  const maxR  = Math.max(...rev.map(r=>r.revenue)) || 1;
+  document.getElementById('revenueChart').innerHTML = rev.map(r => {
+    const h = Math.max(8, (r.revenue/maxR)*100);
+    return `<div class="bar-wrap"><div class="bar" style="height:${h}px;background:var(--success);" title="₹${r.revenue}"></div><div class="bar-label">${r.month}</div></div>`;
+  }).join('');
+
+  const top = data?.top_users || [
+    {name:'Vikram Malhotra',plan:'enterprise',total_reqs:8420},
+    {name:'Raj Sharma',plan:'pro',total_reqs:4230},
+    {name:'Priya Singh',plan:'pro',total_reqs:2180},
+  ];
+  document.getElementById('topUsersChart').innerHTML = top.map((u,i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bg);">
+      <div style="width:22px;height:22px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${i+1}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${u.name}</div><div style="font-size:11px;color:var(--muted);">${u.plan}</div></div>
+      <div style="font-family:var(--font-m);font-size:13px;font-weight:500;">${(u.total_reqs||0).toLocaleString('en-IN')} req</div>
+    </div>`).join('');
+}
+
+// ── PAGINATION ─────────────────────────────────
+function renderPagination(id, current, pages, total, fn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `
+    <div class="page-info">Showing page ${current} of ${pages} (${total} total)</div>
+    <div class="page-btns">
+      <button class="page-btn" onclick="${fn.name}(${current-1})" ${current<=1?'disabled':''}>← Prev</button>
+      <button class="page-btn active">${current}</button>
+      <button class="page-btn" onclick="${fn.name}(${current+1})" ${current>=pages?'disabled':''}>Next →</button>
+    </div>`;
+}
+
+// Close modal on overlay click
+document.getElementById('userModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('loginOverlay').style.display !== 'none') adminLogin();
+});
+</script>
+</body>
+</html>

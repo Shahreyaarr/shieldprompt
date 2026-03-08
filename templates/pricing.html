@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldPrompt — Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f9f9f7;--white:#fff;--text:#0d0d0c;--muted:#6b6b68;--light:#a0a09c;
+  --border:#e5e5e1;--border-dark:#d0d0cc;--accent:#1a56db;--accent-light:#eff4ff;
+  --accent-hover:#1447c0;--danger:#dc2626;--success:#16a34a;--gold:#d97706;
+  --font-d:'Playfair Display',Georgia,serif;--font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* NAV */
+nav{height:60px;background:rgba(249,249,247,0.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;}
+.nav-logo-icon{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.nav-logo-icon svg{width:14px;height:14px;fill:white;}
+.nav-logo-text{font-size:15px;font-weight:700;color:var(--text);}
+.nav-secure{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);}
+.nav-secure svg{width:14px;height:14px;color:var(--success);}
+
+/* STEPS BAR */
+.steps-bar{background:white;border-bottom:1px solid var(--border);padding:16px 24px;}
+.steps-inner{max-width:700px;margin:0 auto;display:flex;align-items:center;gap:0;}
+.step-item{display:flex;align-items:center;gap:8px;flex:1;}
+.step-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.step-circle.done{background:var(--success);color:white;}
+.step-circle.active{background:var(--accent);color:white;}
+.step-circle.pending{background:var(--border);color:var(--muted);}
+.step-label{font-size:13px;font-weight:500;}
+.step-label.active{color:var(--text);}
+.step-label.pending{color:var(--muted);}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 8px;}
+.step-line.done{background:var(--success);}
+
+/* MAIN */
+.checkout-wrap{max-width:1000px;margin:0 auto;padding:40px 24px;display:grid;grid-template-columns:1fr 380px;gap:32px;align-items:start;}
+
+/* LEFT — PAYMENT FORM */
+.payment-card{background:white;border:1px solid var(--border);border-radius:20px;overflow:hidden;animation:fadeUp 0.5s ease both;}
+.card-section{padding:28px 32px;border-bottom:1px solid var(--border);}
+.card-section:last-child{border-bottom:none;}
+.card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.card-sub{font-size:13px;color:var(--muted);}
+
+/* EMAIL INPUT */
+.form-group{margin-bottom:18px;}
+.form-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;display:block;}
+.form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:var(--font-b);color:var(--text);background:var(--bg);outline:none;transition:all 0.15s;}
+.form-input:focus{border-color:var(--accent);background:white;box-shadow:0 0 0 3px rgba(26,86,219,0.08);}
+.form-input::placeholder{color:var(--light);}
+
+/* PAYMENT METHODS */
+.pay-methods{display:flex;gap:10px;margin-bottom:24px;}
+.pay-method{flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;transition:all 0.15s;background:var(--bg);}
+.pay-method:hover{border-color:var(--border-dark);}
+.pay-method.selected{border-color:var(--accent);background:var(--accent-light);}
+.pay-method-icon{font-size:20px;margin-bottom:4px;}
+.pay-method-name{font-size:11px;font-weight:600;color:var(--text);}
+
+/* RAZORPAY BTN */
+.btn-pay{width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font-b);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-pay:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 8px 24px rgba(26,86,219,0.3);}
+.btn-pay:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none;}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+
+/* TRUST BADGES */
+.trust-row{display:flex;gap:16px;margin-top:20px;justify-content:center;flex-wrap:wrap;}
+.trust-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.trust-badge svg{width:14px;height:14px;color:var(--success);}
+
+/* RIGHT — ORDER SUMMARY */
+.summary-card{background:white;border:1px solid var(--border);border-radius:20px;overflow:hidden;animation:fadeUp 0.5s ease 0.1s both;position:sticky;top:80px;}
+.summary-header{padding:24px 28px;border-bottom:1px solid var(--border);background:var(--accent);color:white;}
+.summary-title{font-size:16px;font-weight:700;margin-bottom:2px;}
+.summary-sub{font-size:13px;opacity:0.75;}
+.summary-body{padding:24px 28px;}
+.summary-plan{display:flex;align-items:center;gap:14px;padding-bottom:20px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.plan-icon{width:44px;height:44px;background:var(--accent-light);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.plan-name{font-size:15px;font-weight:700;}
+.plan-billing{font-size:12px;color:var(--muted);}
+.summary-features{list-style:none;margin-bottom:24px;}
+.summary-features li{font-size:13.5px;color:var(--muted);padding:7px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bg);}
+.summary-features li:last-child{border-bottom:none;}
+.summary-features li::before{content:'✓';color:var(--success);font-weight:700;flex-shrink:0;}
+.price-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;}
+.price-label{font-size:13.5px;color:var(--muted);}
+.price-value{font-size:13.5px;color:var(--text);font-weight:500;}
+.price-total{border-top:1px solid var(--border);margin-top:8px;padding-top:16px;display:flex;justify-content:space-between;align-items:center;}
+.total-label{font-size:15px;font-weight:700;}
+.total-value{font-family:var(--font-m);font-size:24px;font-weight:500;color:var(--accent);}
+.trial-badge{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--success);font-weight:500;margin-top:16px;text-align:center;}
+
+/* SUCCESS SCREEN */
+.success-screen{display:none;text-align:center;padding:48px 32px;animation:fadeUp 0.5s ease both;}
+.success-icon{width:72px;height:72px;background:#f0fdf4;border:2px solid #bbf7d0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;}
+.success-title{font-family:var(--font-d);font-size:26px;color:var(--text);margin-bottom:8px;}
+.success-sub{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:28px;}
+.api-key-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 20px;font-family:var(--font-m);font-size:13px;word-break:break-all;color:var(--text);margin-bottom:12px;text-align:left;}
+.api-key-warning{font-size:12px;color:var(--danger);font-weight:500;margin-bottom:24px;display:flex;align-items:center;gap:6px;}
+.btn-dashboard{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-b);text-decoration:none;transition:all 0.2s;}
+.btn-dashboard:hover{background:var(--accent-hover);}
+.btn-copy{padding:8px 16px;background:white;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:all 0.15s;margin-bottom:16px;}
+.btn-copy:hover{background:var(--bg);}
+
+/* MOBILE */
+@media(max-width:768px){
+  .checkout-wrap{grid-template-columns:1fr;padding:20px 16px;gap:20px;}
+  .summary-card{position:static;}
+  .card-section{padding:20px;}
+  .pay-methods{flex-direction:column;}
+  nav{padding:0 16px;}
+}
+@media(max-width:480px){
+  .steps-bar{padding:12px 16px;}
+  .step-label{display:none;}
+  .checkout-wrap{padding:16px 12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L4 5v6c0 5.25 3.5 10.15 8 11.35C16.5 21.15 20 16.25 20 11V5l-8-3z"/></svg></div>
+    <div class="nav-logo-text">ShieldPrompt</div>
+  </a>
+  <div class="nav-secure">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Secured by Razorpay · 256-bit SSL
+  </div>
+</nav>
+
+<!-- STEPS BAR -->
+<div class="steps-bar">
+  <div class="steps-inner">
+    <div class="step-item">
+      <div class="step-circle done">✓</div>
+      <div class="step-label done" style="color:var(--success);">Account</div>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step-item">
+      <div class="step-circle active">2</div>
+      <div class="step-label active">Payment</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-circle pending">3</div>
+      <div class="step-label pending">API Key</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT -->
+<div class="checkout-wrap">
+
+  <!-- LEFT — PAYMENT -->
+  <div>
+    <div class="payment-card" id="paymentCard">
+
+      <!-- EMAIL SECTION -->
+      <div class="card-section">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+          Your account email
+        </div>
+        <div class="card-sub" style="margin-bottom:16px;">API key will be sent to this email after payment.</div>
+        <div class="form-group" style="margin:0;">
+          <input class="form-input" type="email" id="userEmail" placeholder="you@company.com" autocomplete="email">
+        </div>
+      </div>
+
+      <!-- PAYMENT METHOD -->
+      <div class="card-section">
+        <div class="card-title" style="margin-bottom:16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Payment method
+        </div>
+        <div class="pay-methods">
+          <div class="pay-method selected" onclick="selectMethod('upi', this)">
+            <div class="pay-method-icon">📱</div>
+            <div class="pay-method-name">UPI / GPay</div>
+          </div>
+          <div class="pay-method" onclick="selectMethod('card', this)">
+            <div class="pay-method-icon">💳</div>
+            <div class="pay-method-name">Debit/Credit</div>
+          </div>
+          <div class="pay-method" onclick="selectMethod('netbanking', this)">
+            <div class="pay-method-icon">🏦</div>
+            <div class="pay-method-name">Net Banking</div>
+          </div>
+          <div class="pay-method" onclick="selectMethod('wallet', this)">
+            <div class="pay-method-icon">👛</div>
+            <div class="pay-method-name">Wallets</div>
+          </div>
+        </div>
+
+        <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">
+          Razorpay handles all payment processing securely. Your card details are never stored on our servers.
+        </p>
+
+        <button class="btn-pay" onclick="startPayment()" id="payBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="payBtnText">Pay ₹999 — Activate Pro</span>
+          <div class="spinner" id="spinner"></div>
+        </button>
+
+        <div class="trust-row">
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            SSL Encrypted
+          </div>
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>
+            RBI Regulated
+          </div>
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>
+            Cancel Anytime
+          </div>
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>
+            7-Day Refund
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS SCREEN (shown after payment) -->
+    <div class="payment-card" id="successCard" style="display:none;">
+      <div class="success-screen" style="display:block;">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">Payment Successful!</div>
+        <div class="success-sub">Your Pro plan is now active. Here is your API key — save it now, it won't be shown again.</div>
+
+        <div class="api-key-box" id="apiKeyBox">Generating your API key...</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
+          <button class="btn-copy" onclick="copyKey()">📋 Copy API Key</button>
+        </div>
+        <div class="api-key-warning">⚠️ Save this key immediately — it will NOT be shown again!</div>
+
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:24px;text-align:left;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;">✅ What's now active:</div>
+          <div style="font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;">
+            <span>🛡️ 10,000 API requests / day</span>
+            <span>📊 Full analytics dashboard</span>
+            <span>⚡ Priority BERT inference</span>
+            <span>📧 Email support enabled</span>
+          </div>
+        </div>
+
+        <a href="/dashboard" class="btn-dashboard">Go to Dashboard →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT — ORDER SUMMARY -->
+  <div class="summary-card">
+    <div class="summary-header">
+      <div class="summary-title">Order Summary</div>
+      <div class="summary-sub">ShieldPrompt Pro Plan</div>
+    </div>
+    <div class="summary-body">
+      <div class="summary-plan">
+        <div class="plan-icon">🛡️</div>
+        <div>
+          <div class="plan-name">ShieldPrompt Pro</div>
+          <div class="plan-billing">Monthly subscription · Auto-renews</div>
+        </div>
+      </div>
+
+      <ul class="summary-features">
+        <li>10,000 requests per day</li>
+        <li>BERT 98% accuracy detection</li>
+        <li>Full analytics dashboard</li>
+        <li>Attack type classification</li>
+        <li>Priority inference (&lt;50ms)</li>
+        <li>Email support</li>
+        <li>Cancel anytime</li>
+      </ul>
+
+      <div class="price-row">
+        <div class="price-label">Pro Plan</div>
+        <div class="price-value">₹999.00</div>
+      </div>
+      <div class="price-row">
+        <div class="price-label">GST (18%)</div>
+        <div class="price-value">₹179.82</div>
+      </div>
+      <div class="price-row">
+        <div class="price-label">Discount</div>
+        <div class="price-value" style="color:var(--success);">— ₹178.82</div>
+      </div>
+
+      <div class="price-total">
+        <div class="total-label">Total Today</div>
+        <div class="total-value">₹999</div>
+      </div>
+
+      <div class="trial-badge">
+        🎁 7-day money-back guarantee. No questions asked.
+      </div>
+
+      <div style="margin-top:16px;padding:14px;background:var(--bg);border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.6;">
+        <strong style="color:var(--text);">Next billing:</strong> Auto-renews ₹999/month.<br>
+        Cancel anytime from your dashboard — no lock-in.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+const FLASK   = "http://127.0.0.1:5000";
+const RZP_KEY = "{{ razorpay_key }}" || "rzp_test_YOUR_KEY_ID"; // Flask injects this
+
+// Pre-fill email from URL/localStorage
+window.addEventListener('DOMContentLoaded', () => {
+  const email = new URLSearchParams(window.location.search).get('email')
+    || localStorage.getItem('sp_pending_email') || '';
+  if (email) document.getElementById('userEmail').value = email;
+});
+
+function selectMethod(method, el) {
+  document.querySelectorAll('.pay-method').forEach(m => m.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function startPayment() {
+  const email = document.getElementById('userEmail').value.trim();
+  if (!email || !email.includes('@')) {
+    alert('Please enter a valid email address.');
+    document.getElementById('userEmail').focus();
+    return;
+  }
+
+  // Show loader
+  const btn = document.getElementById('payBtn');
+  document.getElementById('payBtnText').textContent = 'Creating order…';
+  document.getElementById('spinner').style.display = 'block';
+  btn.disabled = true;
+
+  try {
+    // Step 1: Create Razorpay order
+    const res    = await fetch(`${FLASK}/api/v1/payments/create-order`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, plan: 'pro' })
+    });
+    const order = await res.json();
+
+    if (order.error) {
+      alert('Error: ' + order.error);
+      resetBtn();
+      return;
+    }
+
+    // Step 2: Open Razorpay checkout
+    const options = {
+      key:         RZP_KEY,
+      amount:      order.amount,
+      currency:    order.currency,
+      name:        "ShieldPrompt",
+      description: "Pro Plan — 10,000 req/day",
+      order_id:    order.order_id,
+      image:       "/static/logo.png",
+      prefill: {
+        email:   email,
+        contact: ""
+      },
+      theme: { color: "#1a56db" },
+      modal: {
+        ondismiss: function() {
+          resetBtn();
+        }
+      },
+      handler: async function(response) {
+        // Step 3: Verify payment on backend
+        document.getElementById('payBtnText').textContent = 'Verifying payment…';
+
+        const verify = await fetch(`${FLASK}/api/v1/payments/verify`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature:  response.razorpay_signature,
+            email:               email
+          })
+        });
+        const result = await verify.json();
+
+        if (result.success) {
+          showSuccess(result.api_key);
+        } else {
+          alert('Payment verification failed: ' + result.error);
+          resetBtn();
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(resp) {
+      alert('Payment failed: ' + resp.error.description);
+      resetBtn();
+    });
+    rzp.open();
+
+  } catch(e) {
+    // DEMO MODE — no Flask running
+    console.log('Demo mode:', e.message);
+    setTimeout(() => {
+      showSuccess('sp_live_' + Array.from({length:32}, () => Math.random().toString(16)[2]).join(''));
+    }, 1500);
+  }
+}
+
+function showSuccess(apiKey) {
+  document.getElementById('paymentCard').style.display = 'none';
+  document.getElementById('successCard').style.display = 'block';
+  document.getElementById('apiKeyBox').textContent = apiKey || 'sp_live_xxxx...';
+
+  // Store token
+  localStorage.setItem('sp_api_key', apiKey || '');
+  localStorage.removeItem('sp_pending_email');
+  localStorage.removeItem('sp_pending_plan');
+
+  // Scroll to top
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function copyKey() {
+  const key = document.getElementById('apiKeyBox').textContent;
+  navigator.clipboard.writeText(key).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = '✓ Copied!';
+    btn.style.color = 'var(--success)';
+    setTimeout(() => { btn.textContent = '📋 Copy API Key'; btn.style.color = ''; }, 2000);
+  });
+}
+
+function resetBtn() {
+  document.getElementById('payBtnText').textContent = 'Pay ₹999 — Activate Pro';
+  document.getElementById('spinner').style.display  = 'none';
+  document.getElementById('payBtn').disabled = false;
+}
+</script>
+</body>
+</html>

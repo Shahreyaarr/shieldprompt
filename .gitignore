@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.db
+firebase-service-account.json
+dataset/
+.DS_Store
+model/bert/
+model/*.pkl
+L1B3RT4S-main/

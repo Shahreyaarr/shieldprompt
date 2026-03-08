@@ -1,0 +1,13 @@
+shieldprompt/
+├── app/
+│   ├── app.py              ✅ (done)
+│   ├── api_keys.py         ✅ (done)
+│   ├── auth.py             🔨 (login/register/JWT)
+│   ├── payments.py         🔨 (Razorpay integration)
+│   └── admin.py            🔨 (super admin panel)
+├── templates/
+│   ├── index.html          🔨 (light landing page)
+│   ├── login.html          🔨 (login/register)
+│   ├── user_dashboard.html ✅ (done, thoda update)
+│   ├── pricing.html        🔨 (checkout page)
+│   └── admin_panel.html    🔨 (super admin)

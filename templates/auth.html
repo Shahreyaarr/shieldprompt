@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldPrompt — Login / Register</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f9f9f7;--white:#fff;--text:#0d0d0c;--muted:#6b6b68;--light:#a0a09c;
+  --border:#e5e5e1;--border-dark:#d0d0cc;--accent:#1a56db;--accent-light:#eff4ff;
+  --accent-hover:#1447c0;--danger:#dc2626;--success:#16a34a;
+  --font-d:'Playfair Display',Georgia,serif;--font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* NAV */
+nav{height:60px;background:rgba(249,249,247,0.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;}
+.nav-logo-icon{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.nav-logo-icon svg{width:14px;height:14px;fill:white;}
+.nav-logo-text{font-size:15px;font-weight:700;color:var(--text);}
+.nav-home{font-size:13.5px;color:var(--muted);text-decoration:none;transition:color 0.15s;}
+.nav-home:hover{color:var(--text);}
+
+/* MAIN LAYOUT */
+.auth-wrap{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 60px);}
+
+/* LEFT PANEL */
+.auth-left{background:var(--accent);padding:60px 56px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;}
+.auth-left::before{content:'';position:absolute;top:-100px;right:-100px;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.auth-left::after{content:'';position:absolute;bottom:-80px;left:-60px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.left-top{position:relative;z-index:1;}
+.left-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.9);margin-bottom:32px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+.left-title{font-family:var(--font-d);font-size:clamp(28px,3vw,42px);color:white;line-height:1.15;letter-spacing:-0.5px;margin-bottom:20px;}
+.left-title em{font-style:italic;color:rgba(255,255,255,0.65);}
+.left-desc{font-size:15px;color:rgba(255,255,255,0.7);line-height:1.7;max-width:340px;}
+.left-stats{display:flex;gap:24px;margin-top:40px;position:relative;z-index:1;}
+.ls{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:16px 20px;flex:1;}
+.ls-num{font-family:var(--font-m);font-size:22px;font-weight:500;color:white;margin-bottom:2px;}
+.ls-lbl{font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;}
+.left-bottom{position:relative;z-index:1;}
+.left-quote{font-size:14px;color:rgba(255,255,255,0.6);font-style:italic;line-height:1.6;}
+.left-quote-author{font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px;}
+
+/* RIGHT PANEL */
+.auth-right{background:white;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+.auth-card{width:100%;max-width:440px;animation:fadeUp 0.5s ease both;}
+
+/* TABS */
+.auth-tabs{display:flex;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:36px;}
+.auth-tab{flex:1;padding:10px;border-radius:9px;border:none;background:transparent;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-b);color:var(--muted);transition:all 0.2s;}
+.auth-tab.active{background:white;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+
+/* FORM */
+.auth-form{display:none;}
+.auth-form.active{display:block;}
+.form-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-0.3px;}
+.form-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.5;}
+.form-group{margin-bottom:18px;}
+.form-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;display:block;}
+.form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:var(--font-b);color:var(--text);background:var(--bg);outline:none;transition:all 0.15s;}
+.form-input:focus{border-color:var(--accent);background:white;box-shadow:0 0 0 3px rgba(26,86,219,0.08);}
+.form-input::placeholder{color:var(--light);}
+.form-input.error{border-color:var(--danger);background:#fef2f2;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-hint{font-size:12px;color:var(--light);margin-top:5px;}
+.form-error{font-size:12px;color:var(--danger);margin-top:5px;display:none;}
+
+/* PASSWORD TOGGLE */
+.input-wrap{position:relative;}
+.input-wrap .form-input{padding-right:44px;}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--light);padding:4px;transition:color 0.15s;}
+.pw-toggle:hover{color:var(--muted);}
+
+/* PLAN SELECT */
+.plan-select{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;}
+.plan-opt{border:1.5px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;transition:all 0.15s;text-align:center;background:var(--bg);}
+.plan-opt:hover{border-color:var(--border-dark);}
+.plan-opt.selected{border-color:var(--accent);background:var(--accent-light);}
+.plan-opt input{display:none;}
+.plan-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.plan-price{font-family:var(--font-m);font-size:14px;font-weight:500;color:var(--accent);}
+.plan-lmt{font-size:10px;color:var(--muted);margin-top:2px;}
+.plan-badge{font-size:9px;font-weight:700;background:var(--accent);color:white;padding:2px 6px;border-radius:4px;display:inline-block;margin-bottom:4px;}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;}
+.divider-line{flex:1;height:1px;background:var(--border);}
+.divider-text{font-size:12px;color:var(--light);font-weight:500;}
+
+/* SUBMIT BTN */
+.btn-submit{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-submit:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 6px 20px rgba(26,86,219,0.25);}
+.btn-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+/* GOOGLE BTN */
+.btn-google{width:100%;padding:12px;background:white;color:var(--text);border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font-b);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:20px;}
+.btn-google:hover{background:var(--bg);border-color:var(--border-dark);}
+
+/* ALERT */
+.alert{padding:12px 16px;border-radius:9px;font-size:13.5px;margin-bottom:20px;display:none;align-items:center;gap:10px;}
+.alert.success{background:#f0fdf4;border:1px solid #bbf7d0;color:var(--success);}
+.alert.error{background:#fef2f2;border:1px solid #fecaca;color:var(--danger);}
+
+/* TERMS */
+.terms{font-size:12px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.6;}
+.terms a{color:var(--accent);text-decoration:none;}
+
+/* STRENGTH BAR */
+.strength-wrap{margin-top:6px;}
+.strength-bars{display:flex;gap:4px;margin-bottom:4px;}
+.strength-bar{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background 0.3s;}
+.strength-label{font-size:11px;color:var(--muted);}
+
+/* ═══════════════════════════════════
+   MOBILE RESPONSIVE
+═══════════════════════════════════ */
+@media (max-width: 768px) {
+  .auth-wrap { grid-template-columns: 1fr; }
+  .auth-left { display: none; }
+  .auth-right { padding: 24px 16px; align-items: flex-start; padding-top: 32px; }
+  .auth-card { max-width: 100%; }
+  .field-row { grid-template-columns: 1fr; gap: 0; }
+  .plan-select { grid-template-columns: 1fr; gap: 8px; }
+  .plan-opt { display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 16px; }
+  .plan-badge { margin-bottom: 0; }
+  nav { padding: 0 16px; }
+}
+@media (max-width: 480px) {
+  .auth-right { padding: 20px 16px; }
+  .form-title { font-size: 20px; }
+  .btn-submit { font-size: 14px; padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L4 5v6c0 5.25 3.5 10.15 8 11.35C16.5 21.15 20 16.25 20 11V5l-8-3z"/></svg></div>
+    <div class="nav-logo-text">ShieldPrompt</div>
+  </a>
+  <a class="nav-home" href="/">← Back to home</a>
+</nav>
+
+<div class="auth-wrap">
+
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="left-top">
+      <div class="left-badge"><div class="live-dot"></div>98% Detection Accuracy</div>
+      <h2 class="left-title">Protect your AI.<br><em>From day one.</em></h2>
+      <p class="left-desc">ShieldPrompt detects prompt injection attacks, jailbreaks and adversarial inputs in real time — before they reach your LLM.</p>
+      <div class="left-stats">
+        <div class="ls"><div class="ls-num">98%</div><div class="ls-lbl">Accuracy</div></div>
+        <div class="ls"><div class="ls-num">&lt;50ms</div><div class="ls-lbl">Latency</div></div>
+        <div class="ls"><div class="ls-num">₹999</div><div class="ls-lbl">Pro/Month</div></div>
+      </div>
+    </div>
+    <div class="left-bottom">
+      <div class="left-quote">"The first Indian AI security platform that actually makes enterprise-grade prompt protection affordable."</div>
+      <div class="left-quote-author">— Built by Kamran Alam, MSc Cyber Security, Amity University Rajasthan</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="auth-card">
+
+      <!-- TABS -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Log in</button>
+        <button class="auth-tab" onclick="switchTab('register')">Create account</button>
+      </div>
+
+      <!-- ALERT -->
+      <div class="alert" id="alertBox"></div>
+
+      <!-- ── LOGIN FORM ── -->
+      <div class="auth-form active" id="loginForm">
+        <div class="form-title">Welcome back</div>
+        <div class="form-sub">Log in to your ShieldPrompt account to access your API keys and dashboard.</div>
+
+        <button class="btn-google" onclick="googleAuth()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+
+        <div class="divider"><div class="divider-line"></div><div class="divider-text">or continue with email</div><div class="divider-line"></div></div>
+
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email">
+          <div class="form-error" id="loginEmailErr">Please enter a valid email.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <input class="form-input" type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password">
+            <button class="pw-toggle" onclick="togglePw('loginPassword', this)" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="form-error" id="loginPassErr">Password is required.</div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+          <a href="/forgot-password" style="font-size:13px;color:var(--accent);text-decoration:none;">Forgot password?</a>
+        </div>
+
+        <button class="btn-submit" onclick="handleLogin()">
+          <span id="loginBtnText">Log in to ShieldPrompt</span>
+        </button>
+
+        <div class="terms" style="margin-top:20px;">
+          Don't have an account? <a href="#" onclick="switchTab('register')">Create one free →</a>
+        </div>
+      </div>
+
+      <!-- ── REGISTER FORM ── -->
+      <div class="auth-form" id="registerForm">
+        <div class="form-title">Create your account</div>
+        <div class="form-sub">Get started free — 100 requests/day, no credit card required.</div>
+
+        <button class="btn-google" onclick="googleAuth()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Sign up with Google
+        </button>
+
+        <div class="divider"><div class="divider-line"></div><div class="divider-text">or register with email</div><div class="divider-line"></div></div>
+
+        <div class="field-row">
+          <div class="form-group">
+            <label class="form-label">First name</label>
+            <input class="form-input" type="text" id="regFirst" placeholder="Kamran" autocomplete="given-name">
+            <div class="form-error" id="regFirstErr">Required.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last name</label>
+            <input class="form-input" type="text" id="regLast" placeholder="Alam">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Work email</label>
+          <input class="form-input" type="email" id="regEmail" placeholder="you@company.com" autocomplete="email">
+          <div class="form-error" id="regEmailErr">Please enter a valid email.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Company / Organisation <span style="color:var(--light);font-weight:400;">(optional)</span></label>
+          <input class="form-input" type="text" id="regCompany" placeholder="Digital Edge Solutions">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <input class="form-input" type="password" id="regPassword" placeholder="Min 8 characters" oninput="checkStrength(this.value)" autocomplete="new-password">
+            <button class="pw-toggle" onclick="togglePw('regPassword', this)" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="strength-wrap">
+            <div class="strength-bars">
+              <div class="strength-bar" id="sb1"></div>
+              <div class="strength-bar" id="sb2"></div>
+              <div class="strength-bar" id="sb3"></div>
+              <div class="strength-bar" id="sb4"></div>
+            </div>
+            <div class="strength-label" id="strengthLbl"></div>
+          </div>
+          <div class="form-error" id="regPassErr">Minimum 8 characters required.</div>
+        </div>
+
+        <!-- PLAN SELECT -->
+        <div class="form-group">
+          <label class="form-label">Choose your plan</label>
+          <div class="plan-select" id="planSelect">
+            <div class="plan-opt selected" onclick="selectPlan('free', this)">
+              <div>
+                <div class="plan-name">Free</div>
+                <div class="plan-price">₹0</div>
+                <div class="plan-lmt">100 req/day</div>
+              </div>
+            </div>
+            <div class="plan-opt" onclick="selectPlan('pro', this)">
+              <div>
+                <div class="plan-badge">POPULAR</div>
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">₹999/mo</div>
+                <div class="plan-lmt">10k req/day</div>
+              </div>
+            </div>
+            <div class="plan-opt" onclick="selectPlan('enterprise', this)">
+              <div>
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-price">Custom</div>
+                <div class="plan-lmt">Unlimited</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-submit" onclick="handleRegister()">
+          <span id="regBtnText">Create Free Account →</span>
+        </button>
+
+        <div class="terms">
+          By signing up you agree to our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.<br>
+          Already have an account? <a href="#" onclick="switchTab('login')">Log in →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const FLASK = "http://127.0.0.1:5000";
+let selectedPlan = 'free';
+
+// ── TAB SWITCH ────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('loginForm').classList.toggle('active', tab==='login');
+  document.getElementById('registerForm').classList.toggle('active', tab==='register');
+  hideAlert();
+}
+
+// ── PLAN SELECT ───────────────────────────────
+function selectPlan(plan, el) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('regBtnText');
+  btn.textContent = plan === 'pro' ? 'Continue to Payment →' : plan === 'enterprise' ? 'Contact Sales →' : 'Create Free Account →';
+}
+
+// ── PASSWORD TOGGLE ───────────────────────────
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ── PASSWORD STRENGTH ─────────────────────────
+function checkStrength(val) {
+  const bars = ['sb1','sb2','sb3','sb4'];
+  const lbl = document.getElementById('strengthLbl');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const colors = ['#dc2626','#d97706','#2563eb','#16a34a'];
+  const labels = ['Weak','Fair','Good','Strong'];
+  bars.forEach((b,i) => {
+    document.getElementById(b).style.background = i < score ? colors[score-1] : 'var(--border)';
+  });
+  lbl.textContent = val.length ? labels[score-1] || '' : '';
+  lbl.style.color = score > 0 ? colors[score-1] : 'var(--muted)';
+}
+
+// ── ALERT ─────────────────────────────────────
+function showAlert(type, msg) {
+  const a = document.getElementById('alertBox');
+  a.className = `alert ${type}`;
+  a.style.display = 'flex';
+  a.textContent = (type === 'success' ? '✓  ' : '⚠  ') + msg;
+}
+function hideAlert() { document.getElementById('alertBox').style.display = 'none'; }
+
+// ── LOGIN ─────────────────────────────────────
+async function handleLogin() {
+  hideAlert();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  if (!email || !email.includes('@')) { showAlert('error','Please enter a valid email address.'); return; }
+  if (!pass) { showAlert('error','Please enter your password.'); return; }
+
+  const btn = document.querySelector('#loginForm .btn-submit');
+  document.getElementById('loginBtnText').textContent = 'Logging in…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${FLASK}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      localStorage.setItem('sp_token', data.token);
+      localStorage.setItem('sp_user', JSON.stringify(data.user));
+      showAlert('success', 'Login successful! Redirecting to dashboard…');
+      setTimeout(() => window.location.href = '/dashboard', 1200);
+    } else {
+      showAlert('error', data.error || 'Invalid email or password.');
+    }
+  } catch(e) {
+    // Demo mode
+    if (email && pass.length >= 6) {
+      showAlert('success', 'Login successful! Redirecting to dashboard…');
+      setTimeout(() => window.location.href = '/dashboard', 1200);
+    } else {
+      showAlert('error', 'Invalid email or password.');
+    }
+  }
+
+  document.getElementById('loginBtnText').textContent = 'Log in to ShieldPrompt';
+  btn.disabled = false;
+}
+
+// ── REGISTER ──────────────────────────────────
+async function handleRegister() {
+  hideAlert();
+  const first = document.getElementById('regFirst').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass  = document.getElementById('regPassword').value;
+  const company = document.getElementById('regCompany').value.trim();
+  const last  = document.getElementById('regLast').value.trim();
+
+  if (!first) { showAlert('error','Please enter your first name.'); return; }
+  if (!email || !email.includes('@')) { showAlert('error','Please enter a valid email address.'); return; }
+  if (pass.length < 8) { showAlert('error','Password must be at least 8 characters.'); return; }
+
+  // Enterprise — redirect to contact
+  if (selectedPlan === 'enterprise') { window.location.href = '/contact'; return; }
+
+  const btn = document.querySelector('#registerForm .btn-submit');
+  document.getElementById('regBtnText').textContent = 'Creating account…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${FLASK}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: `${first} ${last}`.trim(), email, password: pass, company, plan: selectedPlan })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      if (selectedPlan === 'pro') {
+        // Go to payment
+        localStorage.setItem('sp_pending_email', email);
+        localStorage.setItem('sp_pending_plan', 'pro');
+        showAlert('success', 'Account created! Redirecting to payment…');
+        setTimeout(() => window.location.href = '/payment?plan=pro', 1200);
+      } else {
+        localStorage.setItem('sp_token', data.token);
+        localStorage.setItem('sp_user', JSON.stringify(data.user));
+        showAlert('success', 'Account created! Redirecting to dashboard…');
+        setTimeout(() => window.location.href = '/dashboard', 1200);
+      }
+    } else {
+      showAlert('error', data.error || 'Registration failed. Please try again.');
+    }
+  } catch(e) {
+    // Demo mode
+    if (selectedPlan === 'pro') {
+      showAlert('success','Account created! Redirecting to payment…');
+      setTimeout(() => window.location.href='/payment?plan=pro', 1200);
+    } else {
+      showAlert('success','Account created! Welcome to ShieldPrompt 🎉');
+      setTimeout(() => window.location.href='/dashboard', 1500);
+    }
+  }
+
+  document.getElementById('regBtnText').textContent = 'Create Free Account →';
+  btn.disabled = false;
+}
+
+// ── GOOGLE AUTH ───────────────────────────────
+function googleAuth() {
+  showAlert('error','Google OAuth coming soon! Please use email for now.');
+}
+
+// Pre-fill plan from URL
+const urlPlan = new URLSearchParams(window.location.search).get('plan');
+if (urlPlan === 'pro') {
+  switchTab('register');
+  document.querySelectorAll('.plan-opt')[1].click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+# ================================================
+# ShieldPrompt — Render.com Deploy Config
+# Push this to GitHub root folder
+# Then connect repo on render.com
+# ================================================
+
+services:
+  - type: web
+    name: shieldprompt-api
+    env: python
+    region: singapore   # Closest to India
+    plan: free          # Free tier to start
+
+    # Build command
+    buildCommand: |
+      pip install -r requirements.txt
+
+    # Start command
+    startCommand: |
+      cd app && gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120
+
+    # Health check
+    healthCheckPath: /api/v1/health
+
+    # Environment variables (set these on Render dashboard)
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RAZORPAY_KEY_ID
+        sync: false        # You fill this manually on Render
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_SECRET_TOKEN
+        generateValue: true
