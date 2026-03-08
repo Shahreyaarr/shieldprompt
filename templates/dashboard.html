@@ -950,4 +950,10 @@ fetchStats();
 setInterval(fetchStats, 10000);
 </script>
 </body>
-</html>
+</html><script>
+function logout() {
+  localStorage.removeItem('sp_token');
+  localStorage.removeItem('sp_user');
+  window.location.href = '/login';
+}
+</script>
